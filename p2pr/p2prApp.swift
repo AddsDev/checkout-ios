@@ -12,7 +12,9 @@ import SwiftData
 struct p2prApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
-            Item.self,
+            History.self,
+            WelcomePackage.self,
+            Buyer.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
@@ -22,10 +24,10 @@ struct p2prApp: App {
             fatalError("Could not create ModelContainer: \(error)")
         }
     }()
-
+    
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            SplashScreenView()
         }
         .modelContainer(sharedModelContainer)
     }
