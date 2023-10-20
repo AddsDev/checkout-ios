@@ -29,8 +29,7 @@ struct CheckoutPaymentRequest: Codable, Equatable {
     enum CodingKeys: String, CodingKey {
         case auth, buyer, cancelUrl, captureAddress, expiration, fields, locale, noBuyerFill, payment, returnUrl, ipAddress, skipResult, userAgent
     }
-    
-    //MARK - change the origin of the credentials
+
     init(package: WelcomePackage, buyer: Buyer, ipAddress: String) {
         self.auth = .init(login: ProcessInfo.processInfo.environment[LOGIN_CHECKOUT]!, secretKey: ProcessInfo.processInfo.environment[SECRET_KEY_CHECKOUT]!)
         self.buyer = .init(buyer: buyer)
