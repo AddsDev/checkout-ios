@@ -22,13 +22,13 @@ final class RequestManager {
     }
     
     func request<T: Decodable>(
-        from url: URL,
+        from url: String,
         decodeType: T.Type,
         method: HTTPMethod = .get,
         body: Data?,
         completionHandler: @escaping (Result) -> Void
     ) async throws {
-        var request = URLRequest(url: url)
+        var request = URLRequest(url: URL(string: url)!)
         request.httpMethod = method.rawValue
         request.httpBody = body
         request.allHTTPHeaderFields = [

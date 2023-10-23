@@ -14,20 +14,18 @@ protocol CheckoutRepository {
 
 class CheckoutPaymentRepository: CheckoutRepository {
     var baseUrl: String
-    private var checkoutUrl: URL
+    
     init(baseUrl: String) {
         self.baseUrl = baseUrl
-        self.checkoutUrl = URL(string: baseUrl + "/api/session")!
     }
     
-    //MARK - setup validation response
     func createSession(package: WelcomePackage, buyer: Buyer, ipAddress: String, handler: @escaping (Result) -> Void) async {
         do {
             let paymentRequest:CheckoutPaymentRequest = .init(package: package, buyer: buyer, ipAddress: ipAddress)
             let body = try JSONEncoder().encode(paymentRequest)
             
             try await RequestManager().request(
-                from: checkoutUrl,
+                from: baseUrl + "/api/session",
                 decodeType: CheckoutPaymentResponse.self,
                 method: .post,
                 body: body,
@@ -38,16 +36,13 @@ class CheckoutPaymentRepository: CheckoutRepository {
         }
     }
     
-    //MARK - setup validation response
     func searchSession(sessionId: Int, handler: @escaping (Result) -> Void) async {
         do {
-            var url = URLComponents(url: checkoutUrl, resolvingAgainstBaseURL: true)
-            url?.path = "/api/session/\(sessionId)"
             
             let body = try JSONEncoder().encode(CheckoutInformationRequest())
             
             try await RequestManager().request(
-                from: url!.url!,
+                from: baseUrl + "/api/session/\(sessionId)",
                 decodeType: CheckoutInformationResponse.self,
                 method: .post,
                 body: body,
