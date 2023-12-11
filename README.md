@@ -422,6 +422,9 @@ struct CheckoutInformationResponse: Decodable, Result {
 
 You can use this view `CheckoutWebView` to correctly display Checkout.
 
+These settings help optimize and customize the browsing experience within the WebView. It's important that you can
+identify the return URL and cancellation URL to be able to close the WebView once the payment process is complete.
+
 ``` swift
 struct CheckoutWebView: UIViewRepresentable {
     let url: String
@@ -450,7 +453,11 @@ struct CheckoutWebView: UIViewRepresentable {
         
         func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
             if navigationAction.navigationType == .other {
-                ...
+                if let urlStr = navigationAction.request.url?.absoluteString, urlStr == returnUrl || urlStr == cancelUrl {
+                    parent.showWebView = false
+                    decisionHandler(.cancel)
+                    return
+                }
             }
             
             decisionHandler(.allow)

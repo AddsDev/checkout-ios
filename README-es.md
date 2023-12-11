@@ -414,6 +414,10 @@ struct CheckoutInformationResponse: Decodable, Result {
 
 Puedes usar la vista `CheckoutWebView` para una correcta visualización de Checkout.
 
+Estas configuraciones ayudan a optimizar y personalizar la experiencia de navegación dentro del WebView. Es importante
+que puedas identificar cuál es la URL de retorno y la URL de cancelación para poder cerrar el WebView una vez finalice
+el proceso de pago.
+
 ``` swift
 struct CheckoutWebView: UIViewRepresentable {
     let url: String
@@ -442,7 +446,11 @@ struct CheckoutWebView: UIViewRepresentable {
         
         func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
             if navigationAction.navigationType == .other {
-                ...
+                if let urlStr = navigationAction.request.url?.absoluteString, urlStr == returnUrl || urlStr == cancelUrl {
+                    parent.showWebView = false
+                    decisionHandler(.cancel)
+                    return
+                }
             }
             
             decisionHandler(.allow)
