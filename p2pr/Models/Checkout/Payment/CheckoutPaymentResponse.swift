@@ -13,8 +13,12 @@ class CheckoutPaymentResponse: Decodable, Result , Equatable {
         return ObjectIdentifier(lhs) == ObjectIdentifier(rhs)
     }
     
-    var status: CheckoutStatus
+    var status: CheckoutStatus? = nil
     var requestId: Int?
     var processUrl: String?
     var date: String?
+    
+    enum CodingKeys: String, CodingKey {
+        case status, requestId, processUrl, date
+    }
 }

@@ -13,8 +13,42 @@ struct CheckoutWebView: UIViewRepresentable {
     @Binding var showWebView: Bool
     
     func makeUIView(context: Context) -> WKWebView {
-        let wkWebView = WKWebView()
+        let webConfiguration = WKWebViewConfiguration()
+        
+        if #available(iOS 14, *) {
+            let preferences = WKWebpagePreferences()
+            preferences.allowsContentJavaScript = true
+            webConfiguration.defaultWebpagePreferences = preferences
+        } else {
+            let oldPreferences = WKPreferences()
+            oldPreferences.javaScriptEnabled = true
+            oldPreferences.javaScriptCanOpenWindowsAutomatically = true
+            webConfiguration.preferences = oldPreferences
+        }
+        let websiteDataTypes: Set<String> = WKWebsiteDataStore.allWebsiteDataTypes()
+        let date = NSDate(timeIntervalSince1970: 0)
+        
+        let webStorage = WKWebsiteDataStore.default()
+        let webStorage2: Set<String> = [
+            WKWebsiteDataTypeCookies,
+            WKWebsiteDataTypeMemoryCache,
+            WKWebsiteDataTypeLocalStorage,
+            WKWebsiteDataTypeSessionStorage,
+        ];
+        webStorage.removeData(ofTypes: websiteDataTypes, modifiedSince: date as Date, completionHandler: { printDebug("Done")})
+        webConfiguration.websiteDataStore = webStorage
+        
+        
+        let wkWebView = WKWebView(frame: .zero, configuration: webConfiguration)
         wkWebView.navigationDelegate = context.coordinator
+        
+        wkWebView.configuration.websiteDataStore.httpCookieStore.getAllCookies { cookies in
+            for cookie in cookies {
+                if cookie.isSessionOnly || cookie.isHTTPOnly {
+                    wkWebView.configuration.websiteDataStore.httpCookieStore.delete(cookie)
+                }
+            }
+        }
         return wkWebView
     }
     

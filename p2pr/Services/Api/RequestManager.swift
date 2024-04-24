@@ -43,7 +43,10 @@ final class RequestManager {
             
         cancelable = URLSession.shared.dataTaskPublisher(for: request)
             .subscribe(on: Self.sessionProcessingQueue)
-            .map({ return $0.data })
+            .map({
+                printDebug("\(String(data: $0.data, encoding: String.Encoding.utf8) ?? "Data could not be printed")")
+                return $0.data
+            })
             .decode(type: decodeType.self, decoder: decoder)
             .receive(on: DispatchQueue.main)
             .eraseToAnyPublisher()
