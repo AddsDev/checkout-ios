@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+import AdSupport
+import AppTrackingTransparency
 
 struct ConfirmationView: View {
     
@@ -39,10 +41,14 @@ struct ConfirmationView: View {
                 .navigationBarTitleDisplayMode(.inline)
                 Button {
                     isLoading.toggle()
-                    Task {
-                        await viewModel.createSession(package: package, buyer: buyer)
-                        isLoading.toggle()
+                    if viewModel.isAuthorized() {
+                        createSession()
+                    } else {
+                        viewModel.requestAppTrackingPermission({_ in 
+                            createSession()
+                        })
                     }
+                    
                 } label: {
                     HStack(alignment: .center) {
                         if isLoading {
@@ -68,11 +74,11 @@ struct ConfirmationView: View {
             if let response = response {
                 history = History(
                     sessionId: response.requestId ?? 0,
-                    status: response.status.status,
+                    status: response.status?.status ?? "",
                     redirectionUrl: response.processUrl ?? "",
                     detail: package.detail,
                     buyer: "\(buyer.name) \(buyer.surname)",
-                    date: response.status.date
+                    date: response.status?.date
                 )
                 modelContext.insert(history!)
             }
@@ -194,6 +200,13 @@ private extension ConfirmationView {
             .padding()
             .background(.gray.opacity(0.3), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
             
+        }
+    }
+    
+    func createSession() {
+        Task {
+            await viewModel.createSession(package: package, buyer: buyer)
+            isLoading.toggle()
         }
     }
 }

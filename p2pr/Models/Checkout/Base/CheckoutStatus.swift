@@ -8,8 +8,12 @@
 import Foundation
 
 struct CheckoutStatus: Codable {
-    var status: String
+    var status: String? = nil
     var reason: String
     var message: String
     var date: String
+    
+    enum CodingKeys: String, CodingKey {
+        case status, reason, message, date
+    }
 }

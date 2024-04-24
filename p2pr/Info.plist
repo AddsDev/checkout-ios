@@ -2,6 +2,12 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>NSAppTransportSecurity</key>
+	<dict/>
+	<key>Allow Arbitrary Loads</key>
+	<true/>
+	<key>NSUserTrackingUsageDescription</key>
+	<string>App would like to access IDFA for tracking purpose</string>
 	<key>UIAppFonts</key>
 	<array>
 		<string>red_hat_display_regular.ttf</string>
