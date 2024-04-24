@@ -29,13 +29,7 @@ struct CheckoutWebView: UIViewRepresentable {
         let date = NSDate(timeIntervalSince1970: 0)
         
         let webStorage = WKWebsiteDataStore.default()
-        let webStorage2: Set<String> = [
-            WKWebsiteDataTypeCookies,
-            WKWebsiteDataTypeMemoryCache,
-            WKWebsiteDataTypeLocalStorage,
-            WKWebsiteDataTypeSessionStorage,
-        ];
-        webStorage.removeData(ofTypes: websiteDataTypes, modifiedSince: date as Date, completionHandler: { printDebug("Done")})
+        webStorage.removeData(ofTypes: websiteDataTypes, modifiedSince: date as Date, completionHandler: { printDebug("RemoveData WebView - Done")})
         webConfiguration.websiteDataStore = webStorage
         
         

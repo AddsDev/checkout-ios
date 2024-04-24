@@ -22,6 +22,7 @@ la [documentación](https://docs.placetopay.dev/checkout).
 - [Crear una sesión de pago](#crear-una-sesión-de-pago)
 - [Consultar una sesión](#consultar-una-sesión)
 - [Configurar la WebView](#configurar-la-webview)
+- [Posibles errores en el WebView](#errores-webview)
 
 ### App de prueba
 
@@ -70,7 +71,7 @@ Debes preparar la siguiente información:
 La clase de ejemplo `CheckoutAuth` se utiliza como parámetro de la solicitud en operaciones de autenticación.
 La clase incluye métodos privados para cálculos criptográficos, garantizando la seguridad y confidencialidad de los datos de autenticación.
 
-``` swift
+```swift
 class CheckoutAuth: Codable {
     var login: String
     private(set) var nonce: String
@@ -102,7 +103,7 @@ class CheckoutAuth: Codable {
 
 `CheckoutAuth` como parámetro en el cuerpo de la solicitud en JSON.
 
-``` json
+```json
 {
     "login": "c51ce410c124a10e0db5e4b97fc2af39",
     "tranKey": "VQOcRcVH2DfL6Y4B4SaK6yhoH/VOUveZ3xT16OQnvxE=",
@@ -124,7 +125,7 @@ y [`Query Session`](#consultar-una-sesión).
 > 
 > El __Body__ de la petición debe contener el parámetro __auth__ de tipo `CheckoutAuth` o el struct/class responsable de la autenticación.
 
-``` swift
+```swift
 protocol CheckoutRepository {
     func createSession(package: WelcomePackage, buyer: Buyer, ipAddress: String, handler: @escaping (Result) -> Void) async
     func searchSession(sessionId: Int, handler: @escaping (Result) -> Void) async
@@ -175,7 +176,7 @@ la [documentación](https://docs.placetopay.dev/en/checkout/create-session).
 
 La clase de ejemplo `CheckoutPaymentRequest` se utiliza como cuerpo de solicitud. La clase incluye el pago, comprador, envío y otra información.
 
-``` swift
+```swift
 struct CheckoutPaymentRequest: Codable {
     
     var auth: CheckoutAuth?
@@ -214,7 +215,7 @@ struct CheckoutPaymentRequest: Codable {
 
 > Consulte [el pago básico completo](examples/basic_payment_request.json)
 
-``` json
+```json
 {
   "auth": {
     "login": "c51ce410c124a10e0db5e4b97fc2af39",
@@ -259,7 +260,7 @@ struct CheckoutPaymentRequest: Codable {
 
 La clase de ejemplo `CheckoutPaymentResponse` se utiliza como cuerpo de respuesta. La clase incluye el estado, la identificación de la solicitud y la URL de pago.
 
-``` swift
+```swift
 class CheckoutPaymentResponse: Decodable, Result {
     
     var status: CheckoutStatus
@@ -271,7 +272,7 @@ class CheckoutPaymentResponse: Decodable, Result {
 
 `CheckoutPaymentResponse` como parámetro en el cuerpo de la solicitud en JSON.
 
-``` json
+```json
 {
   "status": {
     "status": "OK",
@@ -293,7 +294,7 @@ de los mismos se muestran.
 
 La clase de ejemplo `CheckoutInformationRequest` se utiliza como cuerpo de la solicitud. La clase incluye información de la autenticación.
 
-``` swift
+```swift
 struct CheckoutInformationRequest: Codable {
     var auth: CheckoutAuth
     
@@ -309,7 +310,7 @@ struct CheckoutInformationRequest: Codable {
 
 `CheckoutInformationRequest` como parámetro en el cuerpo de la solicitud en JSON.
 
-``` json
+```json
 {
   "auth": {
     "login": "c51ce410c124a10e0db5e4b97fc2af39",
@@ -322,7 +323,7 @@ struct CheckoutInformationRequest: Codable {
 
 La clase de ejemplo `CheckoutInformationResponse` se utiliza como cuerpo de la respuesta. La clase incluye el estado, la identificación de la solicitud e información de pago.
 
-``` swift
+```swift
 struct CheckoutInformationResponse: Decodable, Result {
     var status: CheckoutStatus
     var requestId: Int?
@@ -335,7 +336,7 @@ struct CheckoutInformationResponse: Decodable, Result {
 
 >  Consulte [la respuesta de completa](examples/information_response.json)
 
-``` json
+```json
 {
   "requestId": 2630139,
   "status": {
@@ -418,7 +419,7 @@ Estas configuraciones ayudan a optimizar y personalizar la experiencia de navega
 que puedas identificar cuál es la URL de retorno y la URL de cancelación para poder cerrar el WebView una vez finalice
 el proceso de pago.
 
-``` swift
+```swift
 struct CheckoutWebView: UIViewRepresentable {
     let url: String
     
@@ -464,12 +465,170 @@ struct CheckoutWebView: UIViewRepresentable {
 
 ---
 
+## Errores WebView
+
+> Para eliminar  cache del webview, consulta [How to remove cache in WKWebView?](https://stackoverflow.com/questions/27105094/how-to-remove-cache-in-wkwebview)
+
+Puede que en tu integración con checkout presentes unos de los errores frecuentes:
+
+- Habilitar JavaScript en el WebView (_AppleWebKit tiene por defecto JavaScript habilitado_)
+
+> Para versiones de iOS 14+ se debe usar WKWebpagePreferences
+
+```swift
+let webConfiguration = WKWebViewConfiguration()
+        
+if #available(iOS 14, *) {
+    let preferences = WKWebpagePreferences()
+    preferences.allowsContentJavaScript = true
+    webConfiguration.defaultWebpagePreferences = preferences
+} else {
+    let oldPreferences = WKPreferences()
+    oldPreferences.javaScriptEnabled = true
+    oldPreferences.javaScriptCanOpenWindowsAutomatically = true
+    webConfiguration.preferences = oldPreferences
+}
+
+...
+
+let wkWebView = WKWebView(frame: .zero, configuration: webConfiguration)
+```
+
+- Eliminar cache, cookies, session storage y etc.
+
+```swift
+let webConfiguration = WKWebViewConfiguration()
+
+let websiteDataTypes: Set<String> = WKWebsiteDataStore.allWebsiteDataTypes()
+//OR
+let websiteDataTypes: Set<String> = [
+            WKWebsiteDataTypeCookies, //(iOS 9.0)
+            WKWebsiteDataTypeMemoryCache, //(iOS 9.0)
+            WKWebsiteDataTypeLocalStorage, //(iOS 9.0)
+            WKWebsiteDataTypeSessionStorage, //(iOS 9.0)
+            //WKWebsiteDataTypeOfflineWebApplicationCache, //(iOS 9.0)
+            //WKWebsiteDataTypeIndexedDBDatabases, //(iOS 9.0)
+            //WKWebsiteDataTypeWebSQLDatabases, //(iOS 9.0)
+            //WKWebsiteDataTypeFetchCache, //(iOS 11.3)
+            //WKWebsiteDataTypeServiceWorkerRegistrations, //(iOS 11.3)
+            //WKWebsiteDataTypeDiskCache, //(iOS 9.0)
+            //WKWebsiteDataTypeFileSystem, //(iOS 16.0)
+            //WKWebsiteDataTypeSearchFieldRecentSearches, //(iOS 17.0)
+        ];
+let date = NSDate(timeIntervalSince1970: 0)
+
+let webStorage = WKWebsiteDataStore.default()
+webStorage.removeData(ofTypes: websiteDataTypes, modifiedSince: date as Date, completionHandler: { print("RemoveData WebView - Done")})
+
+webConfiguration.websiteDataStore = webStorage
+
+let wkWebView = WKWebView(frame: .zero, configuration: webConfiguration)
+```
+
+> Para eliminar cookies de sesión o de encabezados HTTP
+```swift
+let wkWebView = WKWebView(...)
+wkWebView.configuration.websiteDataStore.httpCookieStore.getAllCookies { cookies in
+  for cookie in cookies {
+    if cookie.isSessionOnly || cookie.isHTTPOnly {
+        wkWebView.configuration.websiteDataStore.httpCookieStore.delete(cookie)
+    }
+  }
+}
+```
+- Uso del seguimiento de usuarios, se debe solicitar el permiso de __Seguimiento__ al usuario, puede usar este ejemplo para validar el permiso e implementarlo en donde sea requerido.
+```swift 
+import Foundation
+...
+import AppTrackingTransparency
+import AdSupport
+
+class .... : ... {
+
+  func requestTrackingPermission(_ completion: @escaping (ATTrackingManager.AuthorizationStatus) -> Void) {
+    ATTrackingManager.requestTrackingAuthorization(completionHandler: completion)
+  }
+  
+  func isAuthorized() -> Bool {
+    let status = ATTrackingManager.trackingAuthorizationStatus
+    return status == ATTrackingManager.AuthorizationStatus.authorized
+  }
+  
+  func updateTrakingStatus() {
+    let status = ATTrackingManager.trackingAuthorizationStatus
+      switch status {
+      case .authorized:
+        // Tracking authorization dialog was shown and we are authorized
+        printDebug("Tracking - Authorized")
+      case .denied:
+        // Tracking authorization dialog was shown and permission is denied
+        printDebug("Tracking - Denied")
+      case .notDetermined:
+        // Tracking authorization dialog has not been shown
+        printDebug("Tracking - Not Determined")
+      case .restricted:
+        printDebug("Tracking - Restricted")
+      @unknown default:
+        printDebug("Tracking - Unknown")
+      }
+  } 
+}
+```
+> Recuerda que debes agregar la descripción o el propósito del seguimiento en el archivo `Info.plist`
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    ...
+    <key>NSUserTrackingUsageDescription</key>
+    <string>La aplicación desea acceder a IDFA con fines de seguimiento</string>
+    ...
+  </dict>
+</plist>
+```
+> Recuerda agregar los Nutrition Labels en el archivo de privacidad `PrivacyInfo.xcprivacy`, puede usar este ejemplo, pero recuerda ajustar a los requerimientos de tu aplicación.
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>NSPrivacyCollectedDataTypes</key>
+  <array>
+    <dict>
+      <key>NSPrivacyCollectedDataTypeTracking</key>
+      <true/>
+      <key>NSPrivacyCollectedDataTypeLinked</key>
+      <true/>
+      <key>NSPrivacyCollectedDataTypePurposes</key>
+      <array>
+          <string>La aplicación desea acceder a IDFA con fines de seguimiento</string>
+      </array>
+      <key>NSPrivacyCollectedDataType</key>
+      <string>NSPrivacyCollectedDataType...</string>
+    </dict>
+  </array>
+  <key>NSPrivacyTrackingDomains</key>
+  <array>
+    <string>dominio.com</string>
+    ....
+  </array>
+  <key>NSPrivacyTracking</key>
+  <true/>
+</dict>
+</plist>
+
+```
+
+> ⚠️ Recuerda que puedes usar este repositorio para probar tus credenciales o visitar [P2p Client](https://dnetix.co/p2p/client), si presentas otros errores en la integración visita [Errores frecuentes](https://docs.placetopay.dev/checkout/authentication#possible-errors).  
+
 ## Prueba los credenciales
 
 - Clona este repositorio en tu máquina local.
 
 ```
-git clone https://github.com/placetopay-org/checkout-ios.git
+git clone https://github.com/AddsDev/checkout-ios.git
 ```
 
 - Abrir el proyecto en XCode.
